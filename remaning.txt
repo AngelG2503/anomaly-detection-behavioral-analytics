@@ -1,0 +1,19 @@
+Other models / tables 
+
+Activity or Behavior Logs for network/email actions
+
+Controllers & routes for Activities 
+
+Needed for ML input and tracking user/network behavior
+
+APIs for ML interaction 
+
+Endpoints to fetch logs for ML and save anomaly results
+
+Optional root/dashboard routes 
+
+To check server status or serve frontend data
+
+Frontend integration 
+
+Your backend works standalone, but frontend still needs to call APIs

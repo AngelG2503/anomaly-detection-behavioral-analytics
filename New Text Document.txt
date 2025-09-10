@@ -1,5 +1,0 @@
-cd C:\Projects\net-anomaly-app
-
-.venv\Scripts\activate
-
-uvicorn backend.app:app --reload
