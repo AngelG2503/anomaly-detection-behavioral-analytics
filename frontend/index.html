@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Network Anomaly Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f8f9fa;
+    }
+    h1 {
+      color: #d9534f;
+    }
+    pre {
+      background: #272822;
+      color: #f8f8f2;
+      padding: 10px;
+      border-radius: 5px;
+      max-height: 300px;
+      overflow: auto;
+    }
+    button {
+      padding: 10px 15px;
+      background: #0275d8;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      cursor: pointer;
+      margin-bottom: 15px;
+    }
+    button:hover {
+      background: #025aa5;
+    }
+    img {
+      border: 1px solid #ccc;
+      margin-top: 15px;
+      padding: 5px;
+      background: white;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+    }
+    th {
+      background: #f1f1f1;
+    }
+    tr.anomaly {
+      background: #f8d7da;
+      color: #721c24;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>🚨 Network Anomaly Detection</h1>
+
+  <button onclick="analyzeSample()">Run Sample Analysis</button>
+  <h3>Results:</h3>
+  <pre id="results">Click the button to analyze traffic...</pre>
+
+  <h2>📊 Live Logs</h2>
+  <table id="logTable">
+    <thead>
+      <tr>
+        <th>Timestamp</th>
+        <th>Source IP</th>
+        <th>Destination IP</th>
+        <th>Bytes</th>
+        <th>Protocol</th>
+        <th>Process</th>
+        <th>Score</th>
+        <th>Anomaly</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <h2>📈 Anomaly Plot</h2>
+  <img id="plot" src="http://127.0.0.1:8000/logs/plot" width="600">
+
+ <script>
+  async function analyzeSample() {
+    const sampleData = {
+      records: [
+        { src_ip: "192.168.1.2", dst_ip: "8.8.8.8", bytes: 1200, packets: 10, protocol: "TCP", process: "Chrome" },
+        { src_ip: "192.168.1.5", dst_ip: "10.0.0.4", bytes: 8000, packets: 50, protocol: "UDP", process: "Zoom" }
+      ]
+    };
+
+    const res = await fetch("http://127.0.0.1:8000/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(sampleData)
+    });
+
+    const data = await res.json();
+    document.getElementById("results").innerText = JSON.stringify(data, null, 2);
+
+    // Refresh plot to avoid caching
+    document.getElementById("plot").src = "http://127.0.0.1:8000/logs/plot?" + new Date().getTime();
+  }
+
+
+
+    async function fetchLogs() {
+      const res = await fetch("http://127.0.0.1:8000/logs");
+      const data = await res.json();
+
+      const tbody = document.querySelector("#logTable tbody");
+      tbody.innerHTML = "";
+
+      data.slice(-20).forEach(row => {  // show last 20 entries
+        const tr = document.createElement("tr");
+        if (row.is_anomaly) tr.classList.add("anomaly");
+
+        tr.innerHTML = `
+          <td>${row.timestamp}</td>
+          <td>${row.src_ip}</td>
+          <td>${row.dst_ip}</td>
+          <td>${row.bytes}</td>
+          <td>${row.protocol}</td>
+          <td>${row.process || "unknown"}</td>
+          <td>${row.anomaly_score?.toFixed(3)}</td>
+          <td>${row.is_anomaly}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // auto-refresh logs every 3s
+    setInterval(fetchLogs, 3000);
+    fetchLogs(); // run once on page load
+  </script>
+</body>
+</html>

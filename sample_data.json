@@ -1,0 +1,15 @@
+{
+  "records": [
+    { "src_ip": "192.168.1.2", "dst_ip": "8.8.8.8", "bytes": 1200, "packets": 10, "protocol": "TCP" },
+    { "src_ip": "192.168.1.3", "dst_ip": "10.0.0.5", "bytes": 4500, "packets": 30, "protocol": "UDP" },
+    { "src_ip": "192.168.1.4", "dst_ip": "192.168.1.10", "bytes": 150, "packets": 2, "protocol": "TCP" },
+    { "src_ip": "192.168.1.5", "dst_ip": "10.0.0.8", "bytes": 9800, "packets": 80, "protocol": "UDP" },
+    { "src_ip": "192.168.1.6", "dst_ip": "8.8.4.4", "bytes": 500, "packets": 5, "protocol": "TCP" },
+    { "src_ip": "192.168.1.7", "dst_ip": "172.16.0.2", "bytes": 2500, "packets": 20, "protocol": "TCP" },
+    { "src_ip": "192.168.1.8", "dst_ip": "10.0.0.15", "bytes": 7000, "packets": 60, "protocol": "UDP" },
+    { "src_ip": "192.168.1.9", "dst_ip": "192.168.1.11", "bytes": 300, "packets": 3, "protocol": "TCP" },
+    { "src_ip": "192.168.1.10", "dst_ip": "10.0.0.20", "bytes": 11000, "packets": 90, "protocol": "UDP" },
+    { "src_ip": "192.168.1.11", "dst_ip": "8.8.8.8", "bytes": 600, "packets": 6, "protocol": "TCP" }
+  ]
+}
+
