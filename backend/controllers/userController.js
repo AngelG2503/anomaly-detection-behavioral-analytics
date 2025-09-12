@@ -3,7 +3,6 @@ const { validationResult } = require('express-validator');
 
 // Create a new user
 const createUser = async (req, res) => {
-  // Check validation errors
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
@@ -28,9 +27,8 @@ const getUsers = async (req, res) => {
   }
 };
 
-// Update user
+// Update user (admin can update anyone)
 const updateUser = async (req, res) => {
-  // Check validation errors
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
@@ -56,7 +54,7 @@ const updateUser = async (req, res) => {
   }
 };
 
-// Delete user
+// Delete user (admin only)
 const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
@@ -73,9 +71,37 @@ const deleteUser = async (req, res) => {
   }
 };
 
+// ======================
+// New: Update profile (logged-in user only)
+// ======================
+const updateProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id); // req.user.id comes from authMiddleware
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Update fields only if they exist in the body
+    user.name = req.body.name || user.name;
+    user.email = req.body.email || user.email;
+
+    const updatedUser = await user.save();
+
+    res.json({
+      _id: updatedUser._id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   createUser,
   getUsers,
   updateUser,
   deleteUser,
+  updateProfile, // export the new function
 };
