@@ -15,8 +15,39 @@ router.post(
   [
     body('name').notEmpty().withMessage('Name is required'),
     body('email').isEmail().withMessage('Please enter a valid email'),
+    body('password').notEmpty().withMessage('Password is required'),
   ],
   userController.createUser
+);
+
+// Login
+router.post(
+  '/login',
+  [
+    body('email').isEmail().withMessage('Please enter a valid email'),
+    body('password').notEmpty().withMessage('Password is required'),
+  ],
+  userController.loginUser
+);
+
+// Refresh Token
+router.post('/refresh-token', userController.refreshToken);
+
+// Logout (protected)
+router.post('/logout', authMiddleware, userController.logoutUser);
+
+// Forgot Password
+router.post(
+  '/forgot-password',
+  [body('email').isEmail().withMessage('Please enter a valid email')],
+  userController.forgotPassword
+);
+
+// Reset Password
+router.put(
+  '/reset-password/:token',
+  [body('password').notEmpty().withMessage('Password is required')],
+  userController.resetPassword
 );
 
 // =====================
@@ -24,9 +55,7 @@ router.post(
 // =====================
 
 // Profile (accessible to any logged-in user)
-router.get('/profile', authMiddleware, (req, res) => {
-  res.json({ message: 'Welcome to your profile!', user: req.user });
-});
+router.get('/profile', authMiddleware, userController.getProfile);
 
 // Update profile (current logged-in user)
 router.put(
@@ -35,6 +64,7 @@ router.put(
   [
     body('name').optional().notEmpty().withMessage('Name cannot be empty'),
     body('email').optional().isEmail().withMessage('Please enter a valid email'),
+    body('password').optional().notEmpty().withMessage('Password cannot be empty'),
   ],
   userController.updateProfile
 );
