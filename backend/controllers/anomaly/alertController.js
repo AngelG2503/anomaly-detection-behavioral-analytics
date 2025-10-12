@@ -2,13 +2,12 @@ const Alert = require('../../models/anomaly/Alert');
 const NetworkTraffic = require('../../models/anomaly/NetworkTraffic');
 const EmailCommunication = require('../../models/anomaly/EmailCommunication');
 
-
-// Get all alerts
+// Get all alerts - FILTER BY USER
 exports.getAllAlerts = async (req, res) => {
     try {
         const { page = 1, limit = 50, status, severity, alert_type } = req.query;
 
-        const filter = {};
+        const filter = { user_id: req.userId }; // ✅ ADD THIS
         if (status) filter.status = status;
         if (severity) filter.severity = severity;
         if (alert_type) filter.alert_type = alert_type;
@@ -38,10 +37,13 @@ exports.getAllAlerts = async (req, res) => {
     }
 };
 
-// Get single alert by ID with full details
+// Get single alert by ID with full details - CHECK USER OWNERSHIP
 exports.getAlertById = async (req, res) => {
     try {
-        const alert = await Alert.findById(req.params.id)
+        const alert = await Alert.findOne({
+            _id: req.params.id,
+            user_id: req.userId // ✅ ADD THIS
+        })
             .populate('assigned_to', 'name email')
             .populate('notes.user', 'name email')
             .populate('actions_taken.user', 'name email');
@@ -74,13 +76,16 @@ exports.getAlertById = async (req, res) => {
     }
 };
 
-// Update alert status
+// Update alert status - CHECK USER OWNERSHIP
 exports.updateAlertStatus = async (req, res) => {
     try {
         const { status, assigned_to } = req.body;
         const alertId = req.params.id;
 
-        const alert = await Alert.findById(alertId);
+        const alert = await Alert.findOne({
+            _id: alertId,
+            user_id: req.userId // ✅ ADD THIS
+        });
 
         if (!alert) {
             return res.status(404).json({
@@ -122,13 +127,16 @@ exports.updateAlertStatus = async (req, res) => {
     }
 };
 
-// Add note to alert
+// Add note to alert - CHECK USER OWNERSHIP
 exports.addNoteToAlert = async (req, res) => {
     try {
-        const { note, user_id } = req.body;
+        const { note } = req.body;
         const alertId = req.params.id;
 
-        const alert = await Alert.findById(alertId);
+        const alert = await Alert.findOne({
+            _id: alertId,
+            user_id: req.userId // ✅ ADD THIS
+        });
 
         if (!alert) {
             return res.status(404).json({
@@ -137,7 +145,7 @@ exports.addNoteToAlert = async (req, res) => {
         }
 
         alert.notes.push({
-            user: user_id,
+            user: req.userId, // ✅ Use req.userId instead of user_id from body
             note: note,
             timestamp: new Date()
         });
@@ -158,13 +166,16 @@ exports.addNoteToAlert = async (req, res) => {
     }
 };
 
-// Add action to alert
+// Add action to alert - CHECK USER OWNERSHIP
 exports.addActionToAlert = async (req, res) => {
     try {
-        const { action, user_id } = req.body;
+        const { action } = req.body;
         const alertId = req.params.id;
 
-        const alert = await Alert.findById(alertId);
+        const alert = await Alert.findOne({
+            _id: alertId,
+            user_id: req.userId // ✅ ADD THIS
+        });
 
         if (!alert) {
             return res.status(404).json({
@@ -174,7 +185,7 @@ exports.addActionToAlert = async (req, res) => {
 
         alert.actions_taken.push({
             action: action,
-            user: user_id,
+            user: req.userId, // ✅ Use req.userId instead of user_id from body
             timestamp: new Date()
         });
 
@@ -194,33 +205,39 @@ exports.addActionToAlert = async (req, res) => {
     }
 };
 
-// Get alert statistics
+// Get alert statistics - FILTER BY USER
 exports.getAlertStatistics = async (req, res) => {
     try {
-        const totalAlerts = await Alert.countDocuments();
-        const newAlerts = await Alert.countDocuments({ status: 'new' });
-        const acknowledgedAlerts = await Alert.countDocuments({ status: 'acknowledged' });
-        const investigatingAlerts = await Alert.countDocuments({ status: 'investigating' });
-        const resolvedAlerts = await Alert.countDocuments({ status: 'resolved' });
+        const userId = req.userId; // ✅ ADD THIS
 
-        // Severity distribution
+        const totalAlerts = await Alert.countDocuments({ user_id: userId });
+        const newAlerts = await Alert.countDocuments({ user_id: userId, status: 'new' });
+        const acknowledgedAlerts = await Alert.countDocuments({ user_id: userId, status: 'acknowledged' });
+        const investigatingAlerts = await Alert.countDocuments({ user_id: userId, status: 'investigating' });
+        const resolvedAlerts = await Alert.countDocuments({ user_id: userId, status: 'resolved' });
+
+        // Severity distribution - FILTER BY USER
         const severityDistribution = await Alert.aggregate([
+            { $match: { user_id: userId } }, // ✅ ADD THIS
             { $group: { _id: '$severity', count: { $sum: 1 } } }
         ]);
 
-        // Threat type distribution
+        // Threat type distribution - FILTER BY USER
         const threatDistribution = await Alert.aggregate([
+            { $match: { user_id: userId } }, // ✅ ADD THIS
             { $group: { _id: '$threat_class', count: { $sum: 1 } } }
         ]);
 
-        // Alert type distribution
+        // Alert type distribution - FILTER BY USER
         const typeDistribution = await Alert.aggregate([
+            { $match: { user_id: userId } }, // ✅ ADD THIS
             { $group: { _id: '$alert_type', count: { $sum: 1 } } }
         ]);
 
-        // Recent alerts (last 24 hours)
+        // Recent alerts (last 24 hours) - FILTER BY USER
         const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
         const recentAlerts = await Alert.countDocuments({
+            user_id: userId, // ✅ ADD THIS
             detected_at: { $gte: yesterday }
         });
 
@@ -247,10 +264,13 @@ exports.getAlertStatistics = async (req, res) => {
     }
 };
 
-// Delete alert (admin only)
+// Delete alert - CHECK USER OWNERSHIP
 exports.deleteAlert = async (req, res) => {
     try {
-        const alert = await Alert.findByIdAndDelete(req.params.id);
+        const alert = await Alert.findOneAndDelete({
+            _id: req.params.id,
+            user_id: req.userId // ✅ ADD THIS
+        });
 
         if (!alert) {
             return res.status(404).json({

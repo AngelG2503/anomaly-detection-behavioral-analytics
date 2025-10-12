@@ -1,6 +1,11 @@
 const mongoose = require('mongoose');
 
 const alertSchema = new mongoose.Schema({
+       user_id: { // ✅ Add this line to top!
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
     alert_type: {
         type: String,
         required: true,

@@ -12,4 +12,4 @@ const authorizeRole = (...allowedRoles) => {
   };
 };
 
-module.exports = { authorizeRole };
+module.exports = authorizeRole; // ✅ CHANGE: Remove braces

@@ -12,11 +12,11 @@ class MLService {
     async predictNetworkAnomaly(networkData) {
         try {
             const response = await axios.post(
-                `${ML_BACKEND_URL}/api/predict/network`,
+                `${ML_BACKEND_URL}/predict/network`,  // ✅ Removed /api
                 networkData,
                 {
                     headers: { 'Content-Type': 'application/json' },
-                    timeout: 5000 // 5 second timeout
+                    timeout: 5000
                 }
             );
             return {
@@ -25,6 +25,7 @@ class MLService {
             };
         } catch (error) {
             console.error('Error calling ML backend for network prediction:', error.message);
+            console.error('Full error:', error.response?.data || error);
             return {
                 success: false,
                 error: error.message
@@ -40,7 +41,7 @@ class MLService {
     async predictEmailAnomaly(emailData) {
         try {
             const response = await axios.post(
-                `${ML_BACKEND_URL}/api/predict/email`,
+                `${ML_BACKEND_URL}/predict/email`,  // ✅ Removed /api
                 emailData,
                 {
                     headers: { 'Content-Type': 'application/json' },
@@ -53,6 +54,7 @@ class MLService {
             };
         } catch (error) {
             console.error('Error calling ML backend for email prediction:', error.message);
+            console.error('Full error:', error.response?.data || error);
             return {
                 success: false,
                 error: error.message
@@ -89,7 +91,7 @@ class MLService {
      */
     async checkModelsStatus() {
         try {
-            const response = await axios.get(`${ML_BACKEND_URL}/api/models/status`, {
+            const response = await axios.get(`${ML_BACKEND_URL}/models/status`, {  // ✅ Removed /api
                 timeout: 3000
             });
             return {

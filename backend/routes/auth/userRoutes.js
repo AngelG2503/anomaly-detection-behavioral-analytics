@@ -2,8 +2,9 @@ const express = require('express');
 const { body } = require('express-validator');
 const router = express.Router();
 const userController = require('../../controllers/auth/userController');
-const { authMiddleware } = require('../../middleware/authMiddleware');
-const { authorizeRole } = require('../../middleware/authorizeRole');
+const authMiddleware = require('../../middleware/authMiddleware'); // ✅ No braces
+const authorizeRole = require('../../middleware/authorizeRole'); // ✅ No braces
+
 
 // =====================
 // PUBLIC ROUTES

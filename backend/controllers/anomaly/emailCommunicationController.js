@@ -1,139 +1,136 @@
+const axios = require('axios');
 const EmailCommunication = require('../../models/anomaly/EmailCommunication');
 const Alert = require('../../models/anomaly/Alert');
 const mlService = require('../../services/mlService');
 const { createAlert } = require('./networkTrafficController');
 
-
 // Submit email data for analysis
 exports.submitEmailCommunication = async (req, res) => {
     try {
-        const {
-            sender_email,
-            receiver_email,
-            num_recipients,
-            email_size,
-            has_attachment,
-            num_attachments,
-            subject_length,
-            body_length,
-            is_reply,
-            is_forward
-        } = req.body;
-
-        // Create email communication record
-        const emailComm = new EmailCommunication({
-            timestamp: new Date(),
-            sender_email,
-            receiver_email,
-            num_recipients,
-            email_size,
-            has_attachment,
-            num_attachments,
-            subject_length,
-            body_length,
-            is_reply,
-            is_forward,
-            status: 'pending'
-        });
-
-        // Save to database
-        await emailComm.save();
-
-        // Prepare data for ML prediction
-        const predictionData = {
-            timestamp: emailComm.timestamp.toISOString(),
-            sender_email,
-            receiver_email,
-            num_recipients,
-            email_size,
-            has_attachment,
-            num_attachments,
-            subject_length,
-            body_length,
-            is_reply,
-            is_forward
+        const emailData = req.body;
+        
+        console.log('Received email data:', emailData);
+        
+        // Prepare data for ML backend (matching FastAPI EmailFeatures schema)
+        const mlPayload = {
+            sender_email: emailData.sender,
+            receiver_email: emailData.recipient,
+            subject_length: emailData.subject ? emailData.subject.length : 0,
+            body_length: emailData.email_size || 0,
+            num_recipients: emailData.num_recipients || 1,
+            email_size: emailData.email_size || 0,
+            has_attachment: emailData.attachment_count > 0,
+            num_attachments: emailData.attachment_count || 0,
+            is_reply: false,
+            is_forward: false,
+            timestamp: new Date(emailData.time_sent).toISOString()
         };
-
-        // Call ML backend for prediction
-        const prediction = await mlService.predictEmailAnomaly(predictionData);
-
-        if (prediction.success) {
-            // Update email with prediction results
-            emailComm.is_anomaly = prediction.data.is_anomaly;
-            emailComm.anomaly_score = prediction.data.anomaly_score;
-            emailComm.threat_class = prediction.data.threat_class;
-            emailComm.confidence = prediction.data.confidence;
-            emailComm.prediction_timestamp = new Date();
-            emailComm.status = 'analyzed';
-
-            await emailComm.save();
-
-            // If anomaly detected, create alert
-            if (prediction.data.is_anomaly) {
-                await createAlert('email', emailComm, prediction.data);
-            }
-
-            res.status(201).json({
-                message: 'Email analyzed successfully',
-                data: emailComm,
-                prediction: prediction.data
-            });
-        } else {
-            // ML prediction failed, but data is saved
-            res.status(201).json({
-                message: 'Email saved, but ML prediction failed',
-                data: emailComm,
-                error: prediction.error
-            });
+        
+        console.log('ML Payload:', mlPayload);
+        
+        // Send to FastAPI for prediction
+        const mlResponse = await axios.post('http://localhost:8000/predict/email', mlPayload);
+        
+        console.log('ML Response:', mlResponse.data);
+        
+        // Save to database - WITH user_id
+        const email = new EmailCommunication({
+            user_id: req.userId, // ✅ ADD THIS - from auth middleware
+            timestamp: new Date(),
+            sender_email: emailData.sender,
+            receiver_email: emailData.recipient,
+            num_recipients: emailData.num_recipients || 1,
+            email_size: emailData.email_size || 0,
+            has_attachment: emailData.attachment_count > 0,
+            num_attachments: emailData.attachment_count || 0,
+            subject_length: emailData.subject ? emailData.subject.length : 0,
+            body_length: emailData.email_size || 0,
+            is_reply: false,
+            is_forward: false,
+            is_anomaly: mlResponse.data.is_anomaly,
+            anomaly_score: mlResponse.data.anomaly_score,
+            threat_class: mlResponse.data.threat_class || null,
+            confidence: mlResponse.data.confidence || 0,
+            prediction_timestamp: new Date(mlResponse.data.timestamp),
+            status: mlResponse.data.is_anomaly ? 'analyzed' : 'analyzed'
+        });
+        
+        await email.save();
+        
+        console.log('Email saved successfully:', email._id);
+        
+        // If anomaly detected, create alert
+        if (mlResponse.data.is_anomaly) {
+            await createAlert('email', email, mlResponse.data, req.userId);
         }
-
+        
+        res.json({ 
+            success: true, 
+            data: email,
+            prediction: mlResponse.data 
+        });
     } catch (error) {
-        console.error('Error submitting email:', error);
-        res.status(500).json({
-            message: 'Error processing email',
-            error: error.message
+        console.error('Error in submitEmailCommunication:', error.message);
+        console.error('Error details:', error.response?.data);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message,
+            details: error.response?.data || error.errors
         });
     }
 };
 
-// Get all email communications
+// Get all email communications - FILTER BY USER
 exports.getAllEmails = async (req, res) => {
     try {
-        const { page = 1, limit = 50, anomaly_only } = req.query;
-
-        const filter = {};
+        const { anomaly_only } = req.query;
+        let query = { user_id: req.userId }; // ✅ ADD THIS - only user's emails
+        
         if (anomaly_only === 'true') {
-            filter.is_anomaly = true;
+            query.is_anomaly = true;
         }
-
-        const emails = await EmailCommunication.find(filter)
-            .sort({ timestamp: -1 })
-            .limit(limit * 1)
-            .skip((page - 1) * limit)
-            .exec();
-
-        const count = await EmailCommunication.countDocuments(filter);
-
-        res.status(200).json({
-            data: emails,
-            totalPages: Math.ceil(count / limit),
-            currentPage: page,
-            total: count
+        
+        const emails = await EmailCommunication.find(query).sort({ timestamp: -1 });
+        
+        // Transform data for frontend
+        const transformedEmails = emails.map(email => ({
+            _id: email._id,
+            sender: email.sender_email,
+            recipient: email.receiver_email,
+            subject: `Email (${email.subject_length} chars)`,
+            email_size: email.body_length,
+            attachment_count: email.attachment_count,
+            has_links: email.has_links,
+            time_sent: email.time_sent,
+            num_recipients: email.num_recipients,
+            is_anomaly: email.is_anomaly,
+            anomaly_score: email.anomaly_score,
+            threat_class: email.threat_class,
+            confidence: email.confidence,
+            timestamp: email.timestamp
+        }));
+        
+        res.json({ 
+            success: true, 
+            data: transformedEmails,
+            count: transformedEmails.length 
         });
-
     } catch (error) {
-        console.error('Error fetching emails:', error);
-        res.status(500).json({
-            message: 'Error fetching emails',
-            error: error.message
+        console.error('Error in getAllEmails:', error.message);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message 
         });
     }
 };
 
-// Get single email by ID
+// Get single email by ID - CHECK USER OWNERSHIP
 exports.getEmailById = async (req, res) => {
     try {
-        const email = await EmailCommunication.findById(req.params.id);
+        const email = await EmailCommunication.findOne({
+            _id: req.params.id,
+            user_id: req.userId // ✅ ADD THIS - only user's data
+        });
 
         if (!email) {
             return res.status(404).json({
@@ -154,22 +151,25 @@ exports.getEmailById = async (req, res) => {
     }
 };
 
-// Get email statistics
+// Get email statistics - FILTER BY USER
 exports.getEmailStatistics = async (req, res) => {
     try {
-        const totalEmails = await EmailCommunication.countDocuments();
-        const anomalies = await EmailCommunication.countDocuments({ is_anomaly: true });
+        const userId = req.userId; // ✅ ADD THIS
+
+        const totalEmails = await EmailCommunication.countDocuments({ user_id: userId });
+        const anomalies = await EmailCommunication.countDocuments({ user_id: userId, is_anomaly: true });
         const normal = totalEmails - anomalies;
 
-        // Get threat distribution
+        // Get threat distribution - FILTER BY USER
         const threatDistribution = await EmailCommunication.aggregate([
-            { $match: { is_anomaly: true, threat_class: { $ne: null } } },
+            { $match: { user_id: userId, is_anomaly: true, threat_class: { $ne: null } } }, // ✅ ADD userId
             { $group: { _id: '$threat_class', count: { $sum: 1 } } }
         ]);
 
-        // Recent anomalies (last 24 hours)
+        // Recent anomalies (last 24 hours) - FILTER BY USER
         const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
         const recentAnomalies = await EmailCommunication.countDocuments({
+            user_id: userId, // ✅ ADD THIS
             is_anomaly: true,
             timestamp: { $gte: yesterday }
         });
@@ -187,6 +187,37 @@ exports.getEmailStatistics = async (req, res) => {
         console.error('Error fetching email statistics:', error);
         res.status(500).json({
             message: 'Error fetching statistics',
+            error: error.message
+        });
+    }
+};
+
+// Delete email by ID - CHECK USER OWNERSHIP
+exports.deleteEmailById = async (req, res) => {
+    try {
+        const email = await EmailCommunication.findOneAndDelete({
+            _id: req.params.id,
+            user_id: req.userId // ✅ ADD THIS - only user's data
+        });
+
+        if (!email) {
+            return res.status(404).json({
+                success: false,
+                message: 'Email record not found'
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Email deleted successfully',
+            data: email
+        });
+
+    } catch (error) {
+        console.error('Error deleting email:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error deleting email',
             error: error.message
         });
     }

@@ -1,0 +1,409 @@
+.email-communication {
+    max-width: 1400px;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.page-header h2 {
+    color: #1a237e;
+    font-size: 28px;
+    margin-bottom: 5px;
+}
+
+.page-header p {
+    color: #666;
+    font-size: 14px;
+}
+
+.btn-primary {
+    background-color: #1a237e;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background-color 0.3s;
+}
+
+.btn-primary:hover {
+    background-color: #283593;
+}
+
+/* Form Container */
+.form-container {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.form-container h3 {
+    color: #1a237e;
+    margin-bottom: 20px;
+    font-size: 20px;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-group.checkbox-group {
+    flex-direction: row;
+    align-items: center;
+}
+
+.form-group.checkbox-group label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.form-group.checkbox-group input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.form-group label {
+    color: #333;
+    font-weight: 600;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.form-group input,
+.form-group select {
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: border-color 0.3s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #1a237e;
+}
+
+.message {
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+.message.success {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    border-left: 4px solid #4caf50;
+}
+
+.message.error {
+    background-color: #ffebee;
+    color: #c62828;
+    border-left: 4px solid #f44336;
+}
+
+.btn-submit {
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    padding: 15px 40px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    width: 100%;
+    transition: background-color 0.3s;
+}
+
+.btn-submit:hover:not(:disabled) {
+    background-color: #45a049;
+}
+
+.btn-submit:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+/* Filter Bar */
+.filter-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.filter-bar button {
+    padding: 10px 20px;
+    border: 2px solid #e0e0e0;
+    background-color: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.filter-bar button:hover {
+    border-color: #1a237e;
+    color: #1a237e;
+}
+
+.filter-bar button.active {
+    background-color: #1a237e;
+    color: white;
+    border-color: #1a237e;
+}
+
+/* Email List */
+.email-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.loading,
+.no-data {
+    text-align: center;
+    padding: 40px;
+    background: white;
+    border-radius: 12px;
+    color: #666;
+}
+
+.email-item {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+    border-left: 4px solid #4caf50;
+}
+
+.email-item.anomaly {
+    border-left-color: #f44336;
+}
+
+.email-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.email-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f5f5f5;
+}
+
+.email-addresses {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.sender,
+.recipient {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.sender .label,
+.recipient .label {
+    font-size: 11px;
+    color: #999;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.email-badge {
+    background-color: #e3f2fd;
+    color: #1565c0;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.arrow {
+    font-size: 20px;
+    color: #666;
+    margin: 0 5px;
+}
+
+.email-status .badge {
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.anomaly-badge {
+    background-color: #ffebee;
+    color: #c62828;
+}
+
+.normal-badge {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+
+.email-subject {
+    margin-bottom: 15px;
+    padding: 12px;
+    background-color: #f5f7fa;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.email-subject strong {
+    color: #1a237e;
+    margin-right: 8px;
+}
+
+.email-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.detail-item .label {
+    font-size: 12px;
+    color: #999;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.detail-item .value {
+    font-size: 16px;
+    color: #1a237e;
+    font-weight: 600;
+}
+
+/* Anomaly Info */
+.anomaly-info {
+    background-color: #fff3e0;
+    padding: 15px;
+    border-radius: 8px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.anomaly-score,
+.threat-class,
+.confidence {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.anomaly-score .label,
+.threat-class .label,
+.confidence .label {
+    font-size: 12px;
+    color: #e65100;
+    font-weight: 600;
+}
+
+.anomaly-score .score {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.score.critical {
+    color: #b71c1c;
+}
+
+.score.high {
+    color: #d84315;
+}
+
+.score.medium {
+    color: #f57c00;
+}
+
+.score.low {
+    color: #fbc02d;
+}
+
+.threat-class .value,
+.confidence .value {
+    font-size: 16px;
+    color: #e65100;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.email-footer {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 2px solid #f5f5f5;
+}
+
+.timestamp {
+    font-size: 13px;
+    color: #999;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .email-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .email-addresses {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .email-details {
+        grid-template-columns: 1fr;
+    }
+
+    .anomaly-info {
+        grid-template-columns: 1fr;
+    }
+}

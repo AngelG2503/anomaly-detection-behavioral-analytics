@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const alertController = require('../../controllers/anomaly/alertController');
+const authMiddleware = require('../../middleware/authMiddleware');
+
+router.use(authMiddleware);
 
 // Get all alerts
 router.get('/', alertController.getAllAlerts);

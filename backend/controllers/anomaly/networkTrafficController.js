@@ -18,8 +18,9 @@ exports.submitNetworkTraffic = async (req, res) => {
             bytes_received
         } = req.body;
 
-        // Create network traffic record
+        // Create network traffic record WITH userId
         const networkTraffic = new NetworkTraffic({
+            userId: req.userId, // ✅ ADD THIS - from auth middleware
             timestamp: new Date(),
             source_ip,
             destination_ip,
@@ -68,7 +69,7 @@ exports.submitNetworkTraffic = async (req, res) => {
 
             // If anomaly detected, create alert
             if (prediction.data.is_anomaly) {
-                await createAlert('network', networkTraffic, prediction.data);
+                await createAlert('network', networkTraffic, prediction.data, req.userId);
             }
 
             res.status(201).json({
@@ -94,12 +95,12 @@ exports.submitNetworkTraffic = async (req, res) => {
     }
 };
 
-// Get all network traffic records
+// Get all network traffic records - FILTER BY USER
 exports.getAllNetworkTraffic = async (req, res) => {
     try {
         const { page = 1, limit = 50, anomaly_only } = req.query;
 
-        const filter = {};
+        const filter = { userId: req.userId }; // ✅ ADD THIS - only user's data
         if (anomaly_only === 'true') {
             filter.is_anomaly = true;
         }
@@ -128,10 +129,13 @@ exports.getAllNetworkTraffic = async (req, res) => {
     }
 };
 
-// Get single network traffic record by ID
+// Get single network traffic record by ID - CHECK USER OWNERSHIP
 exports.getNetworkTrafficById = async (req, res) => {
     try {
-        const networkTraffic = await NetworkTraffic.findById(req.params.id);
+        const networkTraffic = await NetworkTraffic.findOne({
+            _id: req.params.id,
+            userId: req.userId // ✅ ADD THIS - only user's data
+        });
 
         if (!networkTraffic) {
             return res.status(404).json({
@@ -152,22 +156,28 @@ exports.getNetworkTrafficById = async (req, res) => {
     }
 };
 
-// Get network traffic statistics
+// Get network traffic statistics - FILTER BY USER
 exports.getNetworkStatistics = async (req, res) => {
     try {
-        const totalTraffic = await NetworkTraffic.countDocuments();
-        const anomalies = await NetworkTraffic.countDocuments({ is_anomaly: true });
+        console.log('🔍 DEBUG: req.userId =', req.userId); // ✅ ADD THIS
+        console.log('🔍 DEBUG: typeof req.userId =', typeof req.userId);
+        const userId = req.userId; // ✅ ADD THIS
+
+        const totalTraffic = await NetworkTraffic.countDocuments({ userId });
+         console.log('🔍 DEBUG: totalTraffic =', totalTraffic);
+        const anomalies = await NetworkTraffic.countDocuments({ userId, is_anomaly: true });
         const normal = totalTraffic - anomalies;
 
-        // Get threat distribution
+        // Get threat distribution - FILTER BY USER
         const threatDistribution = await NetworkTraffic.aggregate([
-            { $match: { is_anomaly: true, threat_class: { $ne: null } } },
+            { $match: { userId, is_anomaly: true, threat_class: { $ne: null } } }, // ✅ ADD userId
             { $group: { _id: '$threat_class', count: { $sum: 1 } } }
         ]);
 
-        // Recent anomalies (last 24 hours)
+        // Recent anomalies (last 24 hours) - FILTER BY USER
         const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
         const recentAnomalies = await NetworkTraffic.countDocuments({
+            userId, // ✅ ADD THIS
             is_anomaly: true,
             timestamp: { $gte: yesterday }
         });
@@ -191,7 +201,7 @@ exports.getNetworkStatistics = async (req, res) => {
 };
 
 // Helper function to create alert
-async function createAlert(type, data, prediction) {
+async function createAlert(type, data, prediction, userId) { // ✅ ADD userId parameter
     try {
         // Determine severity based on anomaly score
         let severity = 'low';
@@ -200,6 +210,7 @@ async function createAlert(type, data, prediction) {
         else if (prediction.anomaly_score > 0.4) severity = 'medium';
 
         const alert = new Alert({
+                user_id: userId, // ✅ ADD THIS
             alert_type: type,
             threat_class: prediction.threat_class || 'unknown',
             severity: severity,
@@ -221,5 +232,36 @@ async function createAlert(type, data, prediction) {
         console.error('Error creating alert:', error);
     }
 }
+
+// Delete network traffic by ID - CHECK USER OWNERSHIP
+exports.deleteNetworkTrafficById = async (req, res) => {
+    try {
+        const networkTraffic = await NetworkTraffic.findOneAndDelete({
+            _id: req.params.id,
+            userId: req.userId // ✅ ADD THIS - only user's data
+        });
+
+        if (!networkTraffic) {
+            return res.status(404).json({
+                success: false,
+                message: 'Network traffic record not found'
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Network traffic deleted successfully',
+            data: networkTraffic
+        });
+
+    } catch (error) {
+        console.error('Error deleting network traffic:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error deleting network traffic',
+            error: error.message
+        });
+    }
+};
 
 module.exports.createAlert = createAlert;

@@ -20,10 +20,8 @@ def extract_network_features(data: NetworkFeatures):
         data.packets_received,
         data.bytes_sent,
         data.bytes_received,
-        # Add time-based features
         data.timestamp.hour,
         data.timestamp.weekday(),
-        # Protocol encoding (simplified)
         1 if data.protocol.lower() == 'tcp' else 0,
         1 if data.protocol.lower() == 'udp' else 0,
     ])
@@ -39,10 +37,8 @@ def extract_email_features(data: EmailFeatures):
         data.body_length,
         1 if data.is_reply else 0,
         1 if data.is_forward else 0,
-        # Time-based features
         data.timestamp.hour,
         data.timestamp.weekday(),
-        # Sender domain length (simplified)
         len(data.sender_email.split('@')[1]) if '@' in data.sender_email else 0,
     ])
 
@@ -50,24 +46,21 @@ def extract_email_features(data: EmailFeatures):
 async def predict_network(data: NetworkFeatures):
     """Predict anomaly for network traffic"""
     try:
-        # Extract features
         features = extract_network_features(data)
-        
-        # Predict anomaly
         is_anomaly, anomaly_score = detector.predict_network_anomaly(features)
         
-        # Classify threat if anomaly detected
         threat_class = None
         confidence = 0.0
         
         if is_anomaly:
-            threat_class, confidence = detector.classify_threat(features)
+            threat_class, confidence = detector.classify_network_threat(features)  # ✅ CHANGED
         
+        # Convert numpy types to Python native types
         return AnomalyPrediction(
-            is_anomaly=is_anomaly,
-            anomaly_score=anomaly_score,
-            threat_class=threat_class,
-            confidence=confidence if is_anomaly else anomaly_score,
+            is_anomaly=bool(is_anomaly),
+            anomaly_score=float(anomaly_score),
+            threat_class=str(threat_class) if threat_class else None,
+            confidence=float(confidence if is_anomaly else anomaly_score),
             timestamp=datetime.now(),
             details=f"Network traffic from {data.source_ip} to {data.destination_ip}"
         )
@@ -79,24 +72,21 @@ async def predict_network(data: NetworkFeatures):
 async def predict_email(data: EmailFeatures):
     """Predict anomaly for email communication"""
     try:
-        # Extract features
         features = extract_email_features(data)
-        
-        # Predict anomaly
         is_anomaly, anomaly_score = detector.predict_email_anomaly(features)
         
-        # Classify threat if anomaly detected
         threat_class = None
         confidence = 0.0
         
         if is_anomaly:
-            threat_class, confidence = detector.classify_threat(features)
+            threat_class, confidence = detector.classify_email_threat(features)  # ✅ CHANGED
         
+        # Convert numpy types to Python native types and return
         return AnomalyPrediction(
-            is_anomaly=is_anomaly,
-            anomaly_score=anomaly_score,
-            threat_class=threat_class,
-            confidence=confidence if is_anomaly else anomaly_score,
+            is_anomaly=bool(is_anomaly),
+            anomaly_score=float(anomaly_score),
+            threat_class=str(threat_class) if threat_class else None,
+            confidence=float(confidence if is_anomaly else anomaly_score),
             timestamp=datetime.now(),
             details=f"Email from {data.sender_email} to {data.receiver_email}"
         )
@@ -110,5 +100,6 @@ async def model_status():
     return {
         "network_detector": detector.network_detector is not None,
         "email_detector": detector.email_detector is not None,
-        "threat_classifier": detector.threat_classifier is not None
+        "network_threat_classifier": detector.network_threat_classifier is not None,  # ✅ CHANGED
+        "email_threat_classifier": detector.email_threat_classifier is not None  # ✅ CHANGED
     }

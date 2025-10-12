@@ -10,15 +10,18 @@ const authMiddleware = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    // decoded should contain id and role
+    
+    // Set BOTH req.user AND req.userId for compatibility
     req.user = {
       id: decoded.id,
       role: decoded.role
     };
+    req.userId = decoded.id; // ✅ ADD THIS - controllers use req.userId
+    
     next();
   } catch (err) {
     return res.status(403).json({ message: 'Invalid or expired token.' });
   }
 };
 
-module.exports = { authMiddleware };
+module.exports = authMiddleware; // ✅ CHANGE: Export directly, not as object
