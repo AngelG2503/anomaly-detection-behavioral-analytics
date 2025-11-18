@@ -5,16 +5,19 @@ const crypto = require('crypto');
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
+  password: { type: String, required: false }, // ✅ CHANGED: Not required for OAuth users
   resetPasswordToken: String,
   resetPasswordExpire: Date,
   role: { type: String, enum: ['user', 'admin'], default: 'user' },
-   refreshToken: String,
+  refreshToken: String,
+  googleId: { type: String, unique: true, sparse: true },
 }, { timestamps: true });
 
-// Hash password before saving
+// Hash password before saving (ONLY if password exists)
 userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
+  // ✅ ADDED: Skip if no password or not modified
+  if (!this.password || !this.isModified('password')) return next();
+  
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
   next();
@@ -22,6 +25,9 @@ userSchema.pre('save', async function (next) {
 
 // Compare password method
 userSchema.methods.matchPassword = async function (enteredPassword) {
+  // ✅ ADDED: Return false if no password set (OAuth user)
+  if (!this.password) return false;
+  
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
@@ -41,6 +47,5 @@ userSchema.methods.getResetPasswordToken = function () {
   return resetToken; // return raw token (not hashed) so we can send it to user
 };
 
-const User = mongoose.model('User', userSchema);
-
-module.exports = User;
+// ✅ FIX: Prevent duplicate model error
+module.exports = mongoose.models.User || mongoose.model('User', userSchema);

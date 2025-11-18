@@ -1,2 +1,6 @@
 .env
 node_modules/
+test_detection.py
+# Monitor logs
+backend/scripts/*.log
+*.pid

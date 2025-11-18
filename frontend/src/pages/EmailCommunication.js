@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { emailAPI } from '../services/api';
+import { toast } from 'react-toastify';
 import './EmailCommunication.css';
 
 const EmailCommunication = () => {
@@ -18,7 +19,6 @@ const EmailCommunication = () => {
         num_recipients: ''
     });
     const [submitting, setSubmitting] = useState(false);
-    const [message, setMessage] = useState({ type: '', text: '' });
 
     useEffect(() => {
         fetchEmails();
@@ -33,6 +33,10 @@ const EmailCommunication = () => {
             setLoading(false);
         } catch (error) {
             console.error('Error fetching emails:', error);
+            toast.error('❌ Failed to fetch emails', {
+                position: "top-right",
+                autoClose: 3000,
+            });
             setLoading(false);
         }
     };
@@ -48,7 +52,6 @@ const EmailCommunication = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSubmitting(true);
-        setMessage({ type: '', text: '' });
 
         try {
             const submitData = {
@@ -60,11 +63,21 @@ const EmailCommunication = () => {
 
             const response = await emailAPI.submit(submitData);
             
-            setMessage({ 
-                type: 'success', 
-                text: `Email analyzed! ${response.data.prediction.is_anomaly ? '⚠️ Anomaly Detected!' : '✅ Normal Email'}` 
-            });
+            // Toast notification based on result
+            if (response.data.prediction.is_anomaly) {
+                const threatClass = response.data.prediction.threat_class || 'Unknown';
+                toast.error(`⚠️ EMAIL ANOMALY DETECTED! Threat: ${threatClass.toUpperCase()}`, {
+                    position: "top-right",
+                    autoClose: 5000,
+                });
+            } else {
+                toast.success('✅ Email analyzed - Normal', {
+                    position: "top-right",
+                    autoClose: 3000,
+                });
+            }
             
+            // Reset form
             setFormData({
                 sender: '',
                 recipient: '',
@@ -78,16 +91,16 @@ const EmailCommunication = () => {
 
             fetchEmails();
             
+            // Close form after 1 second
             setTimeout(() => {
                 setShowForm(false);
-                setMessage({ type: '', text: '' });
-            }, 2000);
+            }, 1000);
 
         } catch (error) {
             console.error('Error submitting email:', error);
-            setMessage({ 
-                type: 'error', 
-                text: 'Failed to submit email data' 
+            toast.error('❌ Failed to submit email data', {
+                position: "top-right",
+                autoClose: 3000,
             });
         } finally {
             setSubmitting(false);
@@ -223,18 +236,12 @@ const EmailCommunication = () => {
                             </div>
                         </div>
 
-                        {message.text && (
-                            <div className={`message ${message.type}`}>
-                                {message.text}
-                            </div>
-                        )}
-
                         <button 
                             type="submit" 
                             className="btn-submit"
                             disabled={submitting}
                         >
-                            {submitting ? '⏳ Analyzing...' : '🚀 Submit & Analyze'}
+                            {submitting ? '⏳ Analyzing...' : '📧 Analyze Email'}
                         </button>
                     </form>
                 </div>
@@ -266,9 +273,15 @@ const EmailCommunication = () => {
             {/* Email List */}
             <div className="email-list">
                 {loading ? (
-                    <div className="loading">Loading email data...</div>
+                    <div className="loading">
+                        <div className="spinner"></div>
+                        <p>Loading email data...</p>
+                    </div>
                 ) : filteredEmails.length === 0 ? (
-                    <div className="no-data">No email data found</div>
+                    <div className="no-data">
+                        <p>📭 No email data found</p>
+                        <p className="sub-text">Submit some email data to see results here</p>
+                    </div>
                 ) : (
                     filteredEmails.map((item) => (
                         <div 

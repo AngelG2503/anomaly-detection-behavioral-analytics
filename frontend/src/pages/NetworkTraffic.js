@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { networkAPI } from '../services/api';
+import { toast } from 'react-toastify';
 import './NetworkTraffic.css';
 
 const NetworkTraffic = () => {
@@ -20,7 +21,6 @@ const NetworkTraffic = () => {
         bytes_received: ''
     });
     const [submitting, setSubmitting] = useState(false);
-    const [message, setMessage] = useState({ type: '', text: '' });
 
     useEffect(() => {
         fetchTraffic();
@@ -35,6 +35,10 @@ const NetworkTraffic = () => {
             setLoading(false);
         } catch (error) {
             console.error('Error fetching traffic:', error);
+            toast.error('❌ Failed to fetch network traffic', {
+                position: "top-right",
+                autoClose: 3000,
+            });
             setLoading(false);
         }
     };
@@ -50,7 +54,6 @@ const NetworkTraffic = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSubmitting(true);
-        setMessage({ type: '', text: '' });
 
         try {
             // Convert string values to numbers
@@ -67,10 +70,19 @@ const NetworkTraffic = () => {
 
             const response = await networkAPI.submit(submitData);
             
-            setMessage({ 
-                type: 'success', 
-                text: `Traffic analyzed! ${response.data.prediction.is_anomaly ? '⚠️ Anomaly Detected!' : '✅ Normal Traffic'}` 
-            });
+            // Toast notification based on result
+            if (response.data.prediction.is_anomaly) {
+                const threatClass = response.data.prediction.threat_class || 'Unknown';
+                toast.error(`⚠️ NETWORK ANOMALY DETECTED! Threat: ${threatClass.toUpperCase()}`, {
+                    position: "top-right",
+                    autoClose: 5000,
+                });
+            } else {
+                toast.success('✅ Network traffic analyzed - Normal', {
+                    position: "top-right",
+                    autoClose: 3000,
+                });
+            }
             
             // Reset form
             setFormData({
@@ -89,17 +101,16 @@ const NetworkTraffic = () => {
             // Refresh traffic list
             fetchTraffic();
             
-            // Close form after 2 seconds
+            // Close form after 1 second
             setTimeout(() => {
                 setShowForm(false);
-                setMessage({ type: '', text: '' });
-            }, 2000);
+            }, 1000);
 
         } catch (error) {
             console.error('Error submitting traffic:', error);
-            setMessage({ 
-                type: 'error', 
-                text: 'Failed to submit traffic data' 
+            toast.error('❌ Failed to submit network traffic', {
+                position: "top-right",
+                autoClose: 3000,
             });
         } finally {
             setSubmitting(false);
@@ -266,12 +277,6 @@ const NetworkTraffic = () => {
                             </div>
                         </div>
 
-                        {message.text && (
-                            <div className={`message ${message.type}`}>
-                                {message.text}
-                            </div>
-                        )}
-
                         <button 
                             type="submit" 
                             className="btn-submit"
@@ -309,9 +314,15 @@ const NetworkTraffic = () => {
             {/* Traffic List */}
             <div className="traffic-list">
                 {loading ? (
-                    <div className="loading">Loading traffic data...</div>
+                    <div className="loading">
+                        <div className="spinner"></div>
+                        <p>Loading traffic data...</p>
+                    </div>
                 ) : filteredTraffic.length === 0 ? (
-                    <div className="no-data">No traffic data found</div>
+                    <div className="no-data">
+                        <p>📊 No traffic data found</p>
+                        <p className="sub-text">Submit some network data to see results here</p>
+                    </div>
                 ) : (
                     filteredTraffic.map((item) => (
                         <div 

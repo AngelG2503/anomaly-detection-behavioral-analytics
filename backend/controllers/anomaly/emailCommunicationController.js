@@ -11,31 +11,34 @@ exports.submitEmailCommunication = async (req, res) => {
         
         console.log('Received email data:', emailData);
         
-        // Prepare data for ML backend (matching FastAPI EmailFeatures schema)
+        // Calculate actual body length
+        const bodyLength = emailData.body_length || emailData.email_size || 0;
+        
+        // Prepare data for ML backend
         const mlPayload = {
             sender_email: emailData.sender,
             receiver_email: emailData.recipient,
             subject_length: emailData.subject ? emailData.subject.length : 0,
-            body_length: emailData.email_size || 0,
+            body_length: bodyLength,  // ✅ FIXED
             num_recipients: emailData.num_recipients || 1,
             email_size: emailData.email_size || 0,
             has_attachment: emailData.attachment_count > 0,
             num_attachments: emailData.attachment_count || 0,
-            is_reply: false,
-            is_forward: false,
+            is_reply: emailData.subject && emailData.subject.startsWith('Re:'), // ✅ DETECT REPLIES
+            is_forward: emailData.subject && emailData.subject.startsWith('Fwd:'), // ✅ DETECT FORWARDS
             timestamp: new Date(emailData.time_sent).toISOString()
         };
         
         console.log('ML Payload:', mlPayload);
         
-        // Send to FastAPI for prediction
+        // Port 8000 - KEEP AS IS
         const mlResponse = await axios.post('http://localhost:8000/predict/email', mlPayload);
         
         console.log('ML Response:', mlResponse.data);
         
-        // Save to database - WITH user_id
+        // Save to database
         const email = new EmailCommunication({
-            user_id: req.userId, // ✅ ADD THIS - from auth middleware
+            user_id: req.userId,
             timestamp: new Date(),
             sender_email: emailData.sender,
             receiver_email: emailData.recipient,
@@ -44,9 +47,9 @@ exports.submitEmailCommunication = async (req, res) => {
             has_attachment: emailData.attachment_count > 0,
             num_attachments: emailData.attachment_count || 0,
             subject_length: emailData.subject ? emailData.subject.length : 0,
-            body_length: emailData.email_size || 0,
-            is_reply: false,
-            is_forward: false,
+            body_length: bodyLength,  // ✅ FIXED
+            is_reply: mlPayload.is_reply,
+            is_forward: mlPayload.is_forward,
             is_anomaly: mlResponse.data.is_anomaly,
             anomaly_score: mlResponse.data.anomaly_score,
             threat_class: mlResponse.data.threat_class || null,
@@ -59,7 +62,6 @@ exports.submitEmailCommunication = async (req, res) => {
         
         console.log('Email saved successfully:', email._id);
         
-        // If anomaly detected, create alert
         if (mlResponse.data.is_anomaly) {
             await createAlert('email', email, mlResponse.data, req.userId);
         }

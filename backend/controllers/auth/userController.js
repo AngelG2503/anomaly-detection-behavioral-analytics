@@ -83,7 +83,7 @@ const refreshToken = async (req, res) => {
 // ======================
 const logoutUser = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.userId); // ✅ Changed
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     user.refreshToken = null;
@@ -94,9 +94,10 @@ const logoutUser = async (req, res) => {
   }
 };
 
+
 const getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('-password -refreshToken');
+    const user = await User.findById(req.userId).select('-password -refreshToken'); // ✅ Changed
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     res.json(user);
@@ -104,6 +105,7 @@ const getProfile = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 // ======================
 // Get all users (admin only)
 // ======================
@@ -162,7 +164,7 @@ const deleteUser = async (req, res) => {
 // ======================
 const updateProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.userId); // ✅ Changed
     if (!user) return res.status(404).json({ message: "User not found" });
 
     user.name = req.body.name || user.name;
@@ -179,6 +181,7 @@ const updateProfile = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 // ======================
 // Forgot Password

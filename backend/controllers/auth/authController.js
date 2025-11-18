@@ -26,6 +26,9 @@ const generateRefreshToken = (user) => {
 // =======================
 // Signup
 // =======================
+// =======================
+// Signup
+// =======================
 const signup = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
@@ -35,6 +38,11 @@ const signup = async (req, res) => {
   try {
     const userExists = await User.findOne({ email });
     if (userExists) return res.status(400).json({ message: 'Email already exists' });
+
+    // ✅ ADDED: Validate password for regular signup
+    if (!password || password.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    }
 
     let finalRole = "user"; // default role
 
@@ -72,10 +80,14 @@ const signup = async (req, res) => {
 // Login
 // =======================
 const login = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, username } = req.body;
 
   try {
-    const user = await User.findOne({ email });
+    // Find user by email OR username
+    const user = await User.findOne({ 
+      $or: [{ email }, { email: username }] 
+    });
+    
     if (user && (await user.matchPassword(password))) {
 
       const accessToken = generateAccessToken(user);
@@ -90,6 +102,7 @@ const login = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        token: accessToken,  // Added for Python scripts
         accessToken,
         refreshToken
       });

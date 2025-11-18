@@ -27,7 +27,8 @@ const Navbar = () => {
     { name: 'Network Traffic', path: '/network', icon: Network },
     { name: 'Email Analysis', path: '/email', icon: Mail },
     { name: 'Alerts', path: '/alerts', icon: AlertTriangle },
-    { name: 'Statistics', path: '/statistics', icon: BarChart3 }
+    { name: 'Statistics', path: '/statistics', icon: BarChart3 },
+    { name: 'Profile', path: '/profile', icon: User } 
   ];
 
   return (

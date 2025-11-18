@@ -68,11 +68,11 @@ const networkTrafficSchema = new mongoose.Schema({
         type: Date,
         default: null
     },
-    // User tracking - MAKE IT REQUIRED
-    user_id: {
+    // User tracking - REQUIRED
+    userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: true // ✅ CHANGED from optional to required
+        required: true
     },
     // Status
     status: {
@@ -88,6 +88,6 @@ const networkTrafficSchema = new mongoose.Schema({
 networkTrafficSchema.index({ timestamp: -1 });
 networkTrafficSchema.index({ is_anomaly: 1 });
 networkTrafficSchema.index({ source_ip: 1 });
-networkTrafficSchema.index({ user_id: 1 }); // ✅ ADD index for user_id
+networkTrafficSchema.index({ userId: 1 }); // ✅ FIXED - Changed from user_id to userId
 
 module.exports = mongoose.model('NetworkTraffic', networkTrafficSchema);

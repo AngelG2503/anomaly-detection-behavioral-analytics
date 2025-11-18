@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const alertSchema = new mongoose.Schema({
-       user_id: { // ✅ Add this line to top!
+    user_id: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
@@ -33,7 +33,6 @@ const alertSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    // Reference to original data
     reference_id: {
         type: mongoose.Schema.Types.ObjectId,
         required: true
@@ -43,7 +42,6 @@ const alertSchema = new mongoose.Schema({
         required: true,
         enum: ['NetworkTraffic', 'EmailCommunication']
     },
-    // Alert status
     status: {
         type: String,
         enum: ['new', 'acknowledged', 'investigating', 'resolved', 'false_positive'],
@@ -55,13 +53,11 @@ const alertSchema = new mongoose.Schema({
         min: 1,
         max: 5
     },
-    // Assigned to (admin/analyst)
     assigned_to: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         default: null
     },
-    // Notes and actions
     notes: [{
         user: {
             type: mongoose.Schema.Types.ObjectId,
@@ -84,7 +80,6 @@ const alertSchema = new mongoose.Schema({
             default: Date.now
         }
     }],
-    // Timestamps
     detected_at: {
         type: Date,
         required: true,
@@ -98,11 +93,9 @@ const alertSchema = new mongoose.Schema({
         type: Date,
         default: null
     }
-}, {
-    timestamps: true
-});
+}, { timestamps: true });
 
-// Indexes
+// Indexes for efficient query
 alertSchema.index({ status: 1 });
 alertSchema.index({ severity: 1 });
 alertSchema.index({ detected_at: -1 });

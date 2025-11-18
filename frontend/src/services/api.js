@@ -9,7 +9,7 @@ const apiClient = axios.create({
     headers: {
         'Content-Type': 'application/json'
     },
-    timeout: 10000 // 10 second timeout
+    timeout: 30000 // 10 second timeout
 });
 
 // Add token to requests if available
@@ -94,6 +94,15 @@ export const mlAPI = {
     checkHealth: () => apiClient.get('/ml/health'),
     testNetwork: () => apiClient.get('/ml/test/network'),
     testEmail: () => apiClient.get('/ml/test/email')
+};
+// =====================
+// Profile APIs
+// =====================
+export const profileAPI = {
+    get: () => apiClient.get('/users/profile'),
+    update: (data) => apiClient.put('/users/profile', data),
+    changePassword: (currentPassword, newPassword) => 
+        apiClient.put('/users/profile', { password: newPassword })
 };
 
 export default apiClient;

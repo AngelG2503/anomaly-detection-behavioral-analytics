@@ -8,6 +8,10 @@ import NetworkTraffic from './pages/NetworkTraffic';
 import EmailCommunication from './pages/EmailCommunication';
 import Alerts from './pages/Alerts';
 import Statistics from './pages/Statistics';
+import Profile from './pages/Profile';
+import GoogleAuthSuccess from './pages/GoogleAuthSuccess'; // ✅ ADD THIS
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -22,6 +26,7 @@ function App() {
         {/* Public Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/auth/google/success" element={<GoogleAuthSuccess />} /> {/* ✅ ADD THIS */}
 
         {/* Protected Routes */}
         <Route path="/" element={
@@ -66,7 +71,25 @@ function App() {
             </Layout>
           </ProtectedRoute>
         } />
+        <Route path="/profile" element={
+          <ProtectedRoute>
+            <Layout>
+              <Profile />
+            </Layout>
+          </ProtectedRoute>
+        } />
       </Routes>
+      
+      {/* Toast Notifications */}
+      <ToastContainer 
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={true}
+        closeOnClick
+        pauseOnHover
+        theme="colored"
+      />
     </Router>
   );
 }

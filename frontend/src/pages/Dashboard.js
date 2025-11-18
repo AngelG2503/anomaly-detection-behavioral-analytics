@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Activity, AlertTriangle, Shield, TrendingUp, Network, Mail } from 'lucide-react';
-import { networkAPI, emailAPI, alertAPI } from '../services/api'; // ✅ Use our API service
+import { networkAPI, emailAPI, alertAPI } from '../services/api';
 import './Dashboard.css';
+import DashboardCharts from '../components/DashboardCharts';
 
 const Dashboard = () => {
   const [stats, setStats] = useState({
@@ -11,49 +12,45 @@ const Dashboard = () => {
   });
 
   const [recentAlerts, setRecentAlerts] = useState([]);
+  const [alertStats, setAlertStats] = useState(null); // ✅ MOVED INSIDE COMPONENT
 
   useEffect(() => {
     fetchDashboardData();
   }, []);
 
   const fetchDashboardData = async () => {
-    try {
-      // Use API service with auth token automatically
-      const [networkRes, emailRes, networkAnomaliesRes, emailAnomaliesRes] = await Promise.all([
-        networkAPI.getStatistics(),
-        emailAPI.getStatistics(),
-        networkAPI.getAll({ anomaly_only: 'true', limit: 5 }),
-        emailAPI.getAll({ anomaly_only: 'true', limit: 5 })
-      ]);
+  try {
+    const [networkRes, emailRes, networkAnomaliesRes, emailAnomaliesRes, alertStatsRes] = await Promise.all([
+      networkAPI.getStatistics(),
+      emailAPI.getStatistics(),
+      networkAPI.getAll({ anomaly_only: 'true', limit: 5 }),
+      emailAPI.getAll({ anomaly_only: 'true', limit: 5 }),
+      alertAPI.getStatistics()
+    ]);
 
-      setStats({
-        network: networkRes.data || { total_traffic: 0, anomalies: 0 },
-        email: emailRes.data || { total_emails: 0, anomalies: 0 },
-        loading: false
-      });
+    // ADD THESE LINES:
+    console.log('✅ Network Stats Response:', networkRes.data);
+    console.log('✅ Email Stats Response:', emailRes.data);
+    console.log('✅ Network Alerts Response:', networkAnomaliesRes.data);
+    console.log('✅ Email Alerts Response:', emailAnomaliesRes.data);
+    console.log('✅ Alert Stats Response:', alertStatsRes.data);
 
-      // Combine and sort recent alerts
-      const networkAlerts = (networkAnomaliesRes.data?.data || []).map(item => ({
-        ...item,
-        type: 'network'
-      }));
+    setStats({
+      network: networkRes.data || { total_traffic: 0, anomalies: 0 },
+      email: emailRes.data || { total_emails: 0, anomalies: 0 },
+      loading: false
+    });
 
-      const emailAlerts = (emailAnomaliesRes.data?.data || []).map(item => ({
-        ...item,
-        type: 'email'
-      }));
+    setAlertStats(alertStatsRes.data || null);
 
-      const combined = [...networkAlerts, ...emailAlerts]
-        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-        .slice(0, 5);
+    // ...rest of your code
 
-      setRecentAlerts(combined);
+  } catch (error) {
+    console.error('Error fetching dashboard data:', error);
+    setStats(prev => ({ ...prev, loading: false }));
+  }
+};
 
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-      setStats(prev => ({ ...prev, loading: false }));
-    }
-  };
 
   const totalRecords = (stats.network.total_traffic || 0) + (stats.email.total_emails || 0);
   const totalAnomalies = (stats.network.anomalies || 0) + (stats.email.anomalies || 0);
@@ -159,6 +156,13 @@ const Dashboard = () => {
           </div>
         )}
       </div>
+
+      {/* ✅ ADD CHARTS HERE - BEFORE System Status */}
+      <DashboardCharts 
+        networkStats={stats.network} 
+        emailStats={stats.email}
+        alertStats={alertStats}
+      />
 
       {/* System Status */}
       <div className="dashboard-section">
