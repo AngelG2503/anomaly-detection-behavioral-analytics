@@ -10,8 +10,9 @@ from googleapiclient.discovery import build
 import base64
 import email as email_lib
 
-API_URL = "http://localhost:3000/api/email/submit"
-LOGIN_URL = "http://localhost:3000/api/auth/login"
+API_URL = "https://anomaly-detection-behavioral-analytics.onrender.com/api/email/submit"
+LOGIN_URL = "https://anomaly-detection-behavioral-analytics.onrender.com/api/auth/login"
+
 
 # Gmail API scopes
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
@@ -124,7 +125,11 @@ def send_data(data, token):
     
     try:
         # Send to ML backend
-        ml_response = requests.post("http://localhost:8000/predict/email", json=ml_payload)
+        ml_response = requests.post(
+    "https://anomaly-detection-ml-backend.onrender.com/predict/email",
+    json=ml_payload
+)
+
         
         if ml_response.status_code == 200:
             ml_result = ml_response.json()
