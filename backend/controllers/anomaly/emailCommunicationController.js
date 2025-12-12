@@ -32,8 +32,7 @@ exports.submitEmailCommunication = async (req, res) => {
         console.log('ML Payload:', mlPayload);
         
         // Port 8000 - KEEP AS IS
-       // Use deployed ML backend (Render)
-const mlResponse = await axios.post(
+        const mlResponse = await axios.post(
   'https://anomaly-detection-ml-backend.onrender.com/predict/email',
   mlPayload
 );

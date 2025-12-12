@@ -222,10 +222,10 @@ if __name__ == "__main__":
         exit(1)
 
     # OPTION A (for later): normal login flow
-    # TOKEN = login()
+    TOKEN = login()
 
-    # OPTION B (now): use existing token for quick testing
-    TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5M2MxMWJhMmU3OWM0NWNlYmVlNDdhMCIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzY1NTU0NzQxLCJleHAiOjE3NjU2NDExNDF9.uhpZ9OCJMMcrqNNm6SaKtm_3HABomxHIvfw_eoX3rg4"
+    # OPTION B (for testing): use existing token
+    # TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5M2MxMWJhMmU3OWM0NWNlYmVlNDdhMCIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzY1NTU0NzQxLCJleHAiOjE3NjU2NDExNDF9.uhpZ9OCJMMcrqNNm6SaKtm_3HABomxHIvfw_eoX3rg4"
 
     # Step 3: Start monitoring
     monitor_emails(service, TOKEN)
