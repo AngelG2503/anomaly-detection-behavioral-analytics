@@ -17,12 +17,8 @@ class AnomalyDetector:
 
 
     def train_network_detector(self, X_train):
-        """
-        Train Isolation Forest for network anomaly detection
-        X_train: numpy array of network features
-        """
+        """Train Isolation Forest for network anomaly detection"""
         X_scaled = self.scaler_network.fit_transform(X_train)
-
         self.network_detector = IsolationForest(
             contamination=0.05,
             random_state=42,
@@ -33,12 +29,8 @@ class AnomalyDetector:
 
 
     def train_email_detector(self, X_train):
-        """
-        Train Isolation Forest for email anomaly detection
-        X_train: numpy array of email features
-        """
+        """Train Isolation Forest for email anomaly detection"""
         X_scaled = self.scaler_email.fit_transform(X_train)
-
         self.email_detector = IsolationForest(
             contamination=0.05,
             random_state=42,
@@ -49,10 +41,7 @@ class AnomalyDetector:
 
 
     def train_network_threat_classifier(self, X_train, y_train):
-        """
-        Train Random Forest classifier for NETWORK threat classification
-        y_train: threat labels like 'ddos', 'port_scan', 'dos', 'normal'
-        """
+        """Train Random Forest classifier for NETWORK threat classification"""
         self.network_threat_classifier = RandomForestClassifier(
             n_estimators=100,
             random_state=42,
@@ -63,10 +52,7 @@ class AnomalyDetector:
 
 
     def train_email_threat_classifier(self, X_train, y_train):
-        """
-        Train Random Forest classifier for EMAIL threat classification
-        y_train: threat labels like 'phishing', 'spam', 'data_leakage', 'malware', 'normal'
-        """
+        """Train Random Forest classifier for EMAIL threat classification"""
         self.email_threat_classifier = RandomForestClassifier(
             n_estimators=100,
             random_state=42,
@@ -145,10 +131,7 @@ class AnomalyDetector:
 
 
     def _classify_network_threat_fallback(self, features):
-        """
-        More realistic network threat classification
-        features indices: [packet_size, duration, port, packets_sent, packets_received, bytes_sent, bytes_received, hour, weekday, is_tcp, is_udp]
-        """
+        """Fallback network threat classification with rules"""
         packets_sent = features[3]
         packets_received = features[4]
         bytes_sent = features[5]
@@ -158,12 +141,12 @@ class AnomalyDetector:
         if packets_sent > 500 and packets_received < 100:
             return 'ddos', 0.85
         
-        # Port Scan: Known malicious ports
+        # Port Scan: Suspicious ports
         suspicious_ports = [23, 135, 139, 445, 1433, 3389]
         if port in suspicious_ports and packets_sent > 50:
             return 'port_scan', 0.80
         
-        # Data Exfiltration: High bytes sent (> 500KB)
+        # Data Exfiltration: High bytes sent
         if bytes_sent > 500000:
             return 'data_exfiltration', 0.75
         
@@ -171,10 +154,7 @@ class AnomalyDetector:
 
 
     def _classify_email_threat_fallback(self, features):
-        """
-        ✅ BALANCED: More realistic email threat classification
-        features indices: [num_recipients, email_size, has_attachment, num_attachments, subject_length, body_length, is_reply, is_forward, hour, weekday, domain_length]
-        """
+        """Fallback email threat classification with rules"""
         num_recipients = features[0]
         email_size = features[1]
         has_attachment = features[2]
@@ -201,20 +181,20 @@ class AnomalyDetector:
         return None, 0.0
 
 
-    def save_models(self, path='app/models/saved_models/'):
+    def save_models(self, path='saved_models/'):
         """Save trained models to disk"""
         os.makedirs(path, exist_ok=True)
 
         if self.network_detector:
-            joblib.dump(self.network_detector, f'{path}network_detector.pkl')
-            joblib.dump(self.scaler_network, f'{path}scaler_network.pkl')
+            joblib.dump(self.network_detector, f'{path}network_isolation_forest.pkl')
+            joblib.dump(self.scaler_network, f'{path}network_scaler.pkl')
 
         if self.email_detector:
             joblib.dump(self.email_detector, f'{path}email_detector.pkl')
             joblib.dump(self.scaler_email, f'{path}scaler_email.pkl')
 
         if self.network_threat_classifier:
-            joblib.dump(self.network_threat_classifier, f'{path}network_threat_classifier.pkl')
+            joblib.dump(self.network_threat_classifier, f'{path}network_random_forest.pkl')
 
         if self.email_threat_classifier:
             joblib.dump(self.email_threat_classifier, f'{path}email_threat_classifier.pkl')
@@ -222,30 +202,30 @@ class AnomalyDetector:
         print(f"Models saved to {path}")
 
 
-    def load_models(self, path='app/models/saved_models/'):
+    def load_models(self, path='saved_models/'):
         """Load trained models from disk"""
         try:
-            self.network_detector = joblib.load(f'{path}network_detector.pkl')
-            self.scaler_network = joblib.load(f'{path}scaler_network.pkl')
+            self.network_detector = joblib.load(f'{path}network_isolation_forest.pkl')
+            self.scaler_network = joblib.load(f'{path}network_scaler.pkl')
             print("✅ Network detector loaded")
-        except:
-            print("⚠️  Network detector not found")
+        except Exception as e:
+            print(f"⚠️  Network detector not found: {e}")
 
         try:
             self.email_detector = joblib.load(f'{path}email_detector.pkl')
             self.scaler_email = joblib.load(f'{path}scaler_email.pkl')
             print("✅ Email detector loaded")
-        except:
-            print("⚠️  Email detector not found")
+        except Exception as e:
+            print(f"⚠️  Email detector not found: {e}")
 
         try:
-            self.network_threat_classifier = joblib.load(f'{path}network_threat_classifier.pkl')
+            self.network_threat_classifier = joblib.load(f'{path}network_random_forest.pkl')
             print("✅ Network threat classifier loaded")
-        except:
-            print("⚠️  Network threat classifier not found - using fallback rules")
+        except Exception as e:
+            print(f"⚠️  Network threat classifier not found - using fallback rules")
 
         try:
             self.email_threat_classifier = joblib.load(f'{path}email_threat_classifier.pkl')
             print("✅ Email threat classifier loaded")
-        except:
-            print("⚠️  Email threat classifier not found - using fallback rules")
+        except Exception as e:
+            print(f"⚠️  Email threat classifier not found - using fallback rules")

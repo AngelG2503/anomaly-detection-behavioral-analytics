@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart3, PieChart, TrendingUp, Activity } from 'lucide-react';
-import axios from 'axios';
+import { networkAPI, emailAPI } from '../services/api';  // ✅ Add this
+// Remove: import axios from 'axios';  // ❌ Don't use axios directly
+
 import './Statistics.css';
 
 const Statistics = () => {
@@ -15,22 +17,23 @@ const Statistics = () => {
   }, []);
 
   const fetchStatistics = async () => {
-    try {
-      const [networkRes, emailRes] = await Promise.all([
-        axios.get('http://localhost:3000/api/network/statistics'),
-        axios.get('http://localhost:3000/api/email/statistics')
-      ]);
+  try {
+    const [networkRes, emailRes] = await Promise.all([
+      networkAPI.getStatistics(),  // ✅ Uses token from api.js
+      emailAPI.getStatistics()
+    ]);
 
-      setStats({
-        network: networkRes.data,
-        email: emailRes.data,
-        loading: false
-      });
-    } catch (error) {
-      console.error('Error fetching statistics:', error);
-      setStats(prev => ({ ...prev, loading: false }));
-    }
-  };
+    setStats({
+      network: networkRes.data,
+      email: emailRes.data,
+      loading: false
+    });
+  } catch (error) {
+    console.error('Error fetching statistics:', error);
+    setStats(prev => ({ ...prev, loading: false }));
+  }
+};
+
 
   if (stats.loading) {
     return (

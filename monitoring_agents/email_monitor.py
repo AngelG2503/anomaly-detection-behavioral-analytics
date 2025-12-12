@@ -47,16 +47,16 @@ def get_gmail_service():
 def login():
     """Login to web app and get authentication token"""
     print("\n=== Login to Anomaly Detection System ===")
-    username = input("Enter username: ")
+    email = input("Enter email: ")  # ✅ Changed from username
     password = input("Enter password: ")
     
-    payload = {"username": username, "password": password}
+    payload = {"email": email, "password": password}  # ✅ Changed field
     
     try:
         response = requests.post(LOGIN_URL, json=payload)
         if response.status_code == 200:
             data = response.json()
-            token = data.get("token")
+            token = data.get("accessToken") or data.get("token")  # ✅ Try both
             print("✅ Login successful!\n")
             return token
         else:
@@ -65,7 +65,6 @@ def login():
     except Exception as e:
         print(f"❌ Error connecting to server: {e}")
         exit(1)
-
 
 def extract_email_info(payload):
     """Extract email information from Gmail API payload"""
@@ -101,24 +100,53 @@ def extract_email_info(payload):
     }
 
 def send_data(data, token):
-    """Send email data to backend API"""
+    """Send email data to ML backend API"""
+    
+    # Transform data to match EmailFeatures schema
+    ml_payload = {
+        "timestamp": data["time_sent"],
+        "sender_email": data["sender"],
+        "receiver_email": data["recipient"],
+        "num_recipients": data["num_recipients"],
+        "email_size": data["email_size"],
+        "has_attachment": data["attachment_count"] > 0,
+        "num_attachments": data["attachment_count"],
+        "subject_length": len(data["subject"]),
+        "body_length": data["body_length"],
+        "is_reply": data["subject"].startswith("Re:") or data["subject"].startswith("RE:"),
+        "is_forward": data["subject"].startswith("Fwd:") or data["subject"].startswith("FW:")
+    }
+    
     headers = {
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json"
     }
+    
     try:
-        resp = requests.post(API_URL, json=data, headers=headers)
-        if resp.status_code == 200:
-            result = resp.json()
-            if result["data"]["is_anomaly"]:
-                print(f"⚠️ Email anomaly detected: {data['subject']}")
+        # Send to ML backend
+        ml_response = requests.post("http://localhost:8000/predict/email", json=ml_payload)
+        
+        if ml_response.status_code == 200:
+            ml_result = ml_response.json()
+            
+            # Now send to Node.js backend with ML results
+            data["is_anomaly"] = ml_result["is_anomaly"]
+            data["anomaly_score"] = ml_result["anomaly_score"]
+            data["threat_class"] = ml_result["threat_class"]
+            data["confidence"] = ml_result["confidence"]
+            
+            resp = requests.post(API_URL, json=data, headers=headers)
+            
+            if ml_result["is_anomaly"]:
+                print(f"⚠️  ANOMALY: {data['subject'][:50]}")
+                print(f"   Threat: {ml_result['threat_class']} (Confidence: {ml_result['confidence']:.2%})")
             else:
-                print(f"✅ Email normal: {data['subject']}")
+                print(f"✅ Normal: {data['subject'][:50]}")
         else:
-            print(f"API error: {resp.status_code}")
+            print(f"ML API error: {ml_response.status_code}")
+            
     except Exception as e:
         print(f"Error sending data: {e}")
-
 
 def monitor_emails(service, token):
     """Monitor Gmail inbox using Gmail API"""
