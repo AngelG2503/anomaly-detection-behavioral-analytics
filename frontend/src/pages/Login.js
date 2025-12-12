@@ -41,8 +41,8 @@ const Login = () => {
 
   // ✅ NEW: Google Sign-In Handler
   const handleGoogleLogin = () => {
-    window.location.href = 'http://localhost:3000/api/auth/google';
-  };
+  window.location.href = `${process.env.REACT_APP_API_BASE_URL}/api/auth/google`;
+};
 
   return (
     <div className="auth-container">

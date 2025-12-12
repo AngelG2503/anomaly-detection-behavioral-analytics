@@ -26,9 +26,13 @@ const Alerts = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:3000/api/alerts', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await axios.get(
+  `${process.env.REACT_APP_API_BASE_URL}/api/alerts`,
+  {
+    headers: { Authorization: `Bearer ${token}` }
+  }
+);
+
       setAlerts(response.data.data);
       setLoading(false);
     } catch (error) {
@@ -40,9 +44,13 @@ const Alerts = () => {
   const fetchStatistics = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:3000/api/alerts/statistics', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await axios.get(
+  `${process.env.REACT_APP_API_BASE_URL}/api/alerts/statistics`,
+  {
+    headers: { Authorization: `Bearer ${token}` }
+  }
+);
+
       setStatistics(response.data);
     } catch (error) {
       console.error('Error fetching statistics:', error);
@@ -70,13 +78,15 @@ const Alerts = () => {
   const updateAlertStatus = async (alertId, newStatus) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.put(
-        `http://localhost:3000/api/alerts/${alertId}/status`,
-        { status: newStatus },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      fetchAlerts();
-      fetchStatistics();
+     await axios.put(
+  `${process.env.REACT_APP_API_BASE_URL}/api/alerts/${alertId}/status`,
+  { status: newStatus },
+  { headers: { Authorization: `Bearer ${token}` } }
+);
+
+fetchAlerts();
+fetchStatistics();
+
     } catch (error) {
       console.error('Error updating alert status:', error);
       alert('Failed to update alert status');
@@ -88,9 +98,13 @@ const Alerts = () => {
     
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:3000/api/alerts/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await axios.delete(
+  `${process.env.REACT_APP_API_BASE_URL}/api/alerts/${id}`,
+  {
+    headers: { Authorization: `Bearer ${token}` }
+  }
+);
+
       fetchAlerts();
       fetchStatistics();
     } catch (error) {
